@@ -2,17 +2,26 @@
 
 import Button from "@/app/components/Button";
 import Input from "@/app/components/input/Input";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import AuthSocialButton from "./AuthSocialButton";
 import { BsGithub, BsGoogle } from "react-icons/bs";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function AuthForm() {
+  const session = useSession();
+  const router = useRouter();
   const [variant, setVariant] = useState("LOGIN");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (session?.status === "authenticated") {
+      router.push("/users");
+    }
+  }, [session?.status, router]);
 
   const toggleVariant = useCallback(() => {
     if (variant === "LOGIN") {
@@ -41,6 +50,7 @@ export default function AuthForm() {
       //AXIOS REGISTER
       axios
         .post("/api/register", data)
+        .then(() => signIn("credentials", data))
         .catch(() => toast.error("Something Wrong !!"))
         .finally(() => setIsLoading(false));
     }
@@ -58,6 +68,7 @@ export default function AuthForm() {
 
           if (callback?.ok && !callback?.error) {
             toast.success("Logged In");
+            router.push("/users");
           }
         })
         .finally(() => setIsLoading(false));
